@@ -1,21 +1,47 @@
 import streamlit as st
 from snowflake.snowpark import Session
+connection_parameters = st.secrets["snowflake"]
+session = Session.builder.configs(connection_parameters).create()
 
-st.title("Snowflake Connection Test")
+st.title(f":cup_with_straw: Customize Your Smoothie! :cup_with_straw: ")
+st.write(
+  """Choose the fruits you want in your custom Smoothie!
+  """)
 
-try:
-    # Load connection parameters from secrets
-    connection_parameters = st.secrets["snowflake"]
+name_on_order = st.text_input("Name on Smoothie")
+st.write("The name on your Smoothie will be:", name_on_order)
 
-    # Create a Snowpark session
-    session = Session.builder.configs(connection_parameters).create()
+cnx = st.connection("snowflake")
+session = cnx.session()
+my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'))
 
-    # Run a simple query
-    df = session.sql("SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_DATABASE(), CURRENT_SCHEMA()").to_pandas()
+ingredients_list = st.multiselect(
+    'Choose up to 5 ingredients:'
+    , my_dataframe
+    , max_selections=5
+    )
 
-    st.success("✅ Successfully connected to Snowflake!")
-    st.dataframe(df)
+if ingredients_list:
+    ingredients_string = ''
 
-except Exception as e:
-    st.error("❌ Failed to connect to Snowflake.")
-    st.exception(e)
+    for fruit_chosen in ingredients_list:
+        ingredients_string += fruit_chosen + ' '
+
+    #st.write(ingredients_string, name_on_order)
+
+    my_insert_stmt = """ insert into smoothies.public.orders(ingredients, name_on_order)
+        values ('""" + ingredients_string + """','""" +name_on_order+ """')"""
+
+    #st.write(my_insert_stmt)
+    #st.stop()
+    time_to_insert = st.button('Submit Order')
+
+    if time_to_insert:
+        session.sql(my_insert_stmt).collect()
+
+        success_msg = 'Your Smoothie is ordered, ' + name_on_order +'!'
+        st.success(success_msg, icon="✅")
+
+
+
+
