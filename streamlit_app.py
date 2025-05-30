@@ -1,4 +1,5 @@
 import streamlit as st
+from snowflake.snowpark.functions import col
 from snowflake.snowpark import Session
 connection_parameters = st.secrets["snowflake"]
 session = Session.builder.configs(connection_parameters).create()
