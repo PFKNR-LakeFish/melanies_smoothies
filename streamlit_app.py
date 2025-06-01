@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import pandas
 from snowflake.snowpark.functions import col
 from snowflake.snowpark import Session
 connection_parameters = st.secrets["snowflake"]
